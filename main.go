@@ -34,6 +34,7 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
+
 	// // insert
 	// _, err = conn.Exec(context.Background(), "INSERT INTO blogs (post_name, summary, post_text, date) VALUES ('Intro', 'This is an example summary', 'This is the post''s content' , '01/28/2025' );")
 	// if err != nil {
@@ -56,6 +57,21 @@ func main() {
 	// 	fmt.Printf("%d | %s | %f\n", id, name, value)
 	// }
 	r := gin.Default()
+	r.POST("/createPost", func(c *gin.Context) {
+		var new_post post
+
+		if err := c.BindJSON(&new_post); err != nil {
+			return
+		}
+
+		var sqlStatement string = fmt.Sprintf("INSERT INTO blogs(post_name , summary, post_text, date) VALUES ('%s','%s','%s','%s')", new_post.PostName, new_post.Summary, new_post.PostContent, new_post.Date)
+		_, err = conn.Exec(context.Background(), sqlStatement)
+		if err != nil {
+			panic(err)
+		}
+		c.IndentedJSON(201, new_post)
+
+	})
 	r.GET("/getPosts", func(c *gin.Context) {
 		rows, err := conn.Query(context.Background(), "SELECT * FROM blogs")
 		posts := []post{}
