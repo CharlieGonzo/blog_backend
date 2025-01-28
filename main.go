@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"os"
 
@@ -10,8 +11,16 @@ import (
 	"github.com/joho/godotenv"
 )
 
+type post struct {
+	ID          string `json:"id"`
+	PostName    string `json:"post_name"`
+	Summary     string `json:"summary"`
+	PostContent string `json:"post_content"`
+	Date        string `json:"date"`
+}
+
 func main() {
-	err := godotenv.Load("en.env")
+	err := godotenv.Load(".env")
 	if err != nil {
 		log.Fatal("Error loading .env file")
 	}
@@ -25,8 +34,8 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-	// insert
-	// _, err = conn.Exec(context.Background(), "INSERT INTO playing_with_neon(name, value) SELECT LEFT(md5(i::TEXT), 10), random() FROM generate_series(1, 10) s(i);")
+	// // insert
+	// _, err = conn.Exec(context.Background(), "INSERT INTO blogs (post_name, summary, post_text, date) VALUES ('Intro', 'This is an example summary', 'This is the post''s content' , '01/28/2025' );")
 	// if err != nil {
 	// 	panic(err)
 	// }
@@ -47,9 +56,31 @@ func main() {
 	// 	fmt.Printf("%d | %s | %f\n", id, name, value)
 	// }
 	r := gin.Default()
-	r.GET("/ping", func(c *gin.Context) {
+	r.GET("/getPosts", func(c *gin.Context) {
+		rows, err := conn.Query(context.Background(), "SELECT * FROM blogs")
+		posts := []post{}
+		for rows.Next() {
+			var id float32
+			var post_name string
+			var summary string
+			var post_content string
+			var date string
+			if err := rows.Scan(&id, &post_name, &summary, &post_content, &date); err != nil {
+				panic(err)
+			}
+			new_post := post{fmt.Sprintf("%f", id), post_name, summary, post_content, date}
+
+			posts = append(posts, new_post)
+			fmt.Printf("%f | %s | %s\n", id, post_name, post_content)
+		}
+		if err != nil {
+			panic(err)
+		}
+		fmt.Print(posts)
+		defer rows.Close()
+
 		c.JSON(200, gin.H{
-			"message": "pong",
+			"posts": posts,
 		})
 	})
 	r.Run()
